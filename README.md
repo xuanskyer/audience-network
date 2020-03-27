@@ -26,6 +26,9 @@ $params = [
 $body = AudienceNetwork::async($params);
 var_dump($body);
 var_dump(AudienceNetwork::$ret);
+/**
+* waiting for  facebook result completed
+*/
 $res = AudienceNetwork::getAsyncResult();
 var_dump(AudienceNetwork::$ret);
 var_dump($res);
@@ -53,6 +56,9 @@ $params = [
 $body = AudienceNetwork::async($params);
 var_dump($body);
 var_dump(AudienceNetwork::$ret);
+/**
+* waiting for  facebook result completed
+*/
 $res = AudienceNetwork::getAsyncResult();
 var_dump(AudienceNetwork::$ret);
 var_dump($res);
