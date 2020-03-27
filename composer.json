@@ -1,0 +1,25 @@
+{
+  "name": "furthestworld/audience-network",
+  "description": "audience network export api",
+  "keywords": [
+    "php",
+    "audience network"
+  ],
+  "require": {
+    "php": ">=7.0",
+    "guzzlehttp/guzzle": "^7.0@dev"
+  },
+  "license": "MIT",
+  "autoload": {
+    "psr-0": {
+      "AudienceNetwork": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "xuanskyer",
+      "email": "furthestworld@icloud.com"
+    }
+  ],
+  "minimum-stability": "dev"
+}
