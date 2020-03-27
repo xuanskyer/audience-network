@@ -2,9 +2,9 @@
 
 [简体中文](README.md) | [ENGLISH](README_EN.md)
 
-获取 Facebook 的 Audience Network 广告报告
+Get Facebook Audience Network ads report.
 
-## 用法
+## Usage
 
 ```
 
@@ -29,7 +29,7 @@ $body = AudienceNetwork::async($params);
 var_dump($body);
 var_dump(AudienceNetwork::$ret);
 /**
-* 等待Facebook的异步接口处理完成结果后，查询
+* waiting for  facebook result completed
 */
 $res = AudienceNetwork::getAsyncResult();
 var_dump(AudienceNetwork::$ret);
@@ -68,10 +68,12 @@ var_dump($res);
 
 ## BTW
 
-如果你想通过 `Ad Formats` 来查询细分数据，可以设置 breakdown 参数`display_format`：
+If you want to get breakdown data , by `Ad Formats`
+
+can set breakdown `display_format` like this:
 
 ```
    'breakdowns' => ['placement', 'platform', 'display_format'],
 ```
 
-Facebook的官方文档中并没有说明这种用法，不过亲测确实可以这么用。
+There is no explanation in the document, but it can be used in this way
