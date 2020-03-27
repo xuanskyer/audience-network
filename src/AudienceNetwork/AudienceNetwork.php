@@ -17,25 +17,6 @@ class AudienceNetwork
     const URL_SYNC_FORMAT  = "https://graph.facebook.com/v6.0/%s/adnetworkanalytics/?access_token=%s";
     const URL_ASYNC_FORMAT = "https://graph.facebook.com/v6.0/%s/adnetworkanalytics/?access_token=%s";
 
-    const ROWS_FIELD = [
-        'property'                     => null,
-        'day'                          => null,
-        'country'                      => null,
-        'platform'                     => null,
-        'display_format'               => null,
-        'placement_name'               => null,
-        'placement'                    => null,
-        'fb_ad_network_request'        => null,
-        'fb_ad_network_filled_request' => null,
-        'fb_ad_network_fill_rate'      => null,
-        'fb_ad_network_imp'            => null,
-        'fb_ad_network_show_rate'      => null,
-        'fb_ad_network_click'          => null,
-        'fb_ad_network_ctr'            => null,
-        'fb_ad_network_cpm'            => null,
-        'fb_ad_network_revenue'        => null,
-    ];
-
     protected static $client       = null;
     protected static $property_id  = null;
     protected static $access_token = null;
@@ -45,7 +26,7 @@ class AudienceNetwork
         'query_id'          => null,
         'async_result_link' => null,
     ];
-    protected static $ret          = [];
+    public static $ret          = self::RET_SUCCESS;
 
     protected static function buildSyncUrl()
     {
@@ -81,37 +62,141 @@ class AudienceNetwork
         self::$client = new \GuzzleHttp\Client();
     }
 
-    public static function sync()
+    /**
+     * @param array $params
+     * [
+     * 'metric' => 'fb_ad_network_imp',
+     * 'breakdowns' => ['country','placement'],
+     * 'since' => date('Y-m-d'),
+     * 'until' => null,
+     * 'filters' => [
+     * [
+     * 'field' => 'country',
+     * 'operator' => 'in',
+     * 'values' => ['US', 'JP']
+     * ]
+     * ],
+     * 'ordering_column' => 'time',
+     * 'ordering_type' => 'descending',
+     * 'aggregation_period' => 'day',
+     * ];
+     * @return mixed
+     */
+    public static function sync($params = [])
     {
-        $response = self::$client->request('GET', self::$sync_url);
-        if (200 != $response->getStatusCode()) {
-            self::$ret = self::RET_SYNC_ERR;
-        }
-        return $response->getBody(); // '{"id": 1420053, "name": "guzzle", ...}'
-    }
+        try {
+            $request_params = self::buildRequestParams($params);
+            $response = self::$client->request('GET', self::$sync_url . $request_params);
 
-    public static function async()
-    {
-        $response = self::$client->request('POST', self::$async_url);
-        if (200 != $response->getStatusCode()) {
-            self::$ret = self::RET_ASYNC_ERR;
-        }
-        $body            = $response->getBody(); // '{"id": 1420053, "name": "guzzle", ...}'
-        self::$async_ret = json_decode($body, true);
-    }
-
-    public static function getAsyncResult()
-    {
-        if (!array_key_exists('async_result_link', self::$async_ret)) {
-            self::$ret = self::RET_ASYNC_RESULT_LINK_ERR;
-            return null;
-        } else {
-            $response = self::$client->request('GET', self::$async_ret['async_result_link']);
             if (200 != $response->getStatusCode()) {
                 self::$ret = self::RET_SYNC_ERR;
             }
-            return $response->getBody(); // '{"id": 1420053, "name": "guzzle", ...}'
+            return json_decode($response->getBody(), true);
+        } catch (\Exception $e) {
+            self::$ret = [
+                $e->getCode(), $e->getMessage()
+            ];
+            return [];
         }
     }
 
+    public static function async($params = [])
+    {
+        try{
+            $request_params = self::buildRequestParams($params);
+            $response = self::$client->request('POST', self::$async_url . $request_params);
+            if (200 != $response->getStatusCode()) {
+                self::$ret = self::RET_ASYNC_ERR;
+            }
+            $body            = $response->getBody();
+            self::$async_ret = json_decode($body, true);
+        }catch (\Exception $e){
+            self::$ret = [$e->getCode(), $e->getMessage()];
+        }
+    }
+
+    public static function getAsyncResult($to_array = true)
+    {
+        try{
+            if (!array_key_exists('async_result_link', self::$async_ret)) {
+                self::$ret = self::RET_ASYNC_RESULT_LINK_ERR;
+                return null;
+            } else {
+                $response = self::$client->request('GET', self::$async_ret['async_result_link']);
+                if (200 != $response->getStatusCode()) {
+                    self::$ret = self::RET_SYNC_ERR;
+                }
+                return $to_array ? json_decode($response->getBody(), true) : $response->getBody();
+            }
+        }catch (\Exception $e){
+            self::$ret = [$e->getCode(), $e->getMessage()];
+            return null;
+        }
+
+    }
+
+    protected static function buildRequestParams($params = [])
+    {
+        $request_params = '';
+        if (array_key_exists('metric', $params)) {
+            $metric = $params['metric'];
+        }
+        empty($metric) && $metric = 'fb_ad_network_imp';
+        $request_params .= "&metrics=['{$metric}']";
+
+        if (array_key_exists('breakdowns', $params)) {
+            $breakdowns_str = json_encode($params['breakdowns'], 1);
+            $breakdowns_str && $request_params .= "&breakdowns={$breakdowns_str}";
+        }
+
+        $since = date('Y-m-d');
+        if (array_key_exists('since', $params)) {
+            $since = $params['since'];
+        }
+        $request_params .= "&since={$since}";
+        $until          = null;
+        if (array_key_exists('until', $params)) {
+            $until = $params['until'];
+        }
+        $until && $request_params .= "&until={$until}";
+
+        if (array_key_exists('limit', $params)) {
+            $request_params .= "&limit={$params['limit']}";
+        }
+        if (array_key_exists('ordering_column', $params)) {
+            $request_params .= "&ordering_column={$params['ordering_column']}";
+        }
+        if (array_key_exists('ordering_type', $params)) {
+            $request_params .= "&ordering_type={$params['ordering_type']}";
+        }
+        if (array_key_exists('aggregation_period', $params)) {
+            $request_params .= "&aggregation_period={$params['aggregation_period']}";
+        }
+        if (array_key_exists('filters', $params)) {
+            $filters_str = self::buildFilters($params['filters']);
+            $filters_str && $request_params .= "&filters={$filters_str}";
+        }
+        return $request_params;
+    }
+
+    /**
+     * @param array $filters
+     * [
+     *      [
+     *          'field' => 'country',
+     *          'operator' => 'in',
+     *          'values' => []
+     *      ],
+     *      [
+     *          'field' => 'placement',
+     *          'operator' => 'in',
+     *          'values' => []
+     *      ]
+     * ]
+     * @return string
+     */
+    protected static function buildFilters($filters = [])
+    {
+        return empty($filters) ? '' : json_encode($filters, 1);
+    }
 }
