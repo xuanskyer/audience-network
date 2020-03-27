@@ -2,6 +2,8 @@
 
 [简体中文](README.md) | [ENGLISH](README_EN.md)
 
+![PHP Composer](https://github.com/xuanskyer/audience-network/workflows/PHP%20Composer/badge.svg?branch=master)
+
 Get Facebook Audience Network ads report.
 
 ## Usage
