@@ -85,6 +85,9 @@ class AudienceNetwork
     public static function sync($params = [])
     {
         try {
+            if(array_key_exists('access_token', $params) && array_key_exists('property_id', $params)){
+                self::init($params);
+            }
             $request_params = self::buildRequestParams($params);
             $response = self::$client->request('GET', self::$sync_url . $request_params);
 
@@ -103,6 +106,9 @@ class AudienceNetwork
     public static function async($params = [])
     {
         try{
+            if(array_key_exists('access_token', $params) && array_key_exists('property_id', $params)){
+                self::init($params);
+            }
             $request_params = self::buildRequestParams($params);
             $response = self::$client->request('POST', self::$async_url . $request_params);
             if (200 != $response->getStatusCode()) {
